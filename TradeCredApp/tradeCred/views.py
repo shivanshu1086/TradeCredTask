@@ -1,3 +1,5 @@
+from datetime import date
+
 from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import redirect, render
@@ -14,6 +16,7 @@ def index(request):
 def import_excel_file(self, *args, **kwargs):
     data = get_data("static/test_documents_upload.xls")
     data_dict = dict(data)
+    now = date.today()
     for i in range(1, len(data_dict['Documents'][1:]) + 1):
         temp = data_dict['Documents'][i]
         try:
@@ -21,6 +24,8 @@ def import_excel_file(self, *args, **kwargs):
                 VendorModel.objects.get(document_number=temp[1])
                 return "exists"
             except ObjectDoesNotExist:
+                if temp[4] > now or temp[5] > now:
+                    return "dateError"
                 VendorModel.objects.create(
                     invoice_number=temp[0], document_number=temp[1],
                     type_of_invoice=temp[2], net_due_date=temp[3],
@@ -41,6 +46,9 @@ class Upload_data(View):
             return render(self.request, 'upload.html')
         elif response is "exists":
             messages.info(self.request, "Some data already exists. Try fresh rows!")
+            return redirect("/")
+        elif response is "dateError":
+            messages.info(self.request, "There exists a date col with invaild date.Please remove that")
             return redirect("/")
         elif response is False:
             messages.info(self.request, "There is some error importing sheet. Please try again!")
