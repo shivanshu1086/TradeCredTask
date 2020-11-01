@@ -25,7 +25,9 @@ def import_excel_file(self, *args, **kwargs):
                 return "exists"
             except ObjectDoesNotExist:
                 if temp[4] > now or temp[5] > now:
-                    return "dateError"
+                    continue
+                if temp[6] < 0:
+                    continue
                 VendorModel.objects.create(
                     invoice_number=temp[0], document_number=temp[1],
                     type_of_invoice=temp[2], net_due_date=temp[3],
@@ -42,7 +44,7 @@ class Upload_data(View):
     def get(self, *args, **kwargs):
         response = import_excel_file(self, *args, **kwargs)
         if response is True:
-            messages.success(self.request, "The data has been uploaded successfully!")
+            messages.success(self.request, "The valid data has been uploaded successfully!")
             return render(self.request, 'upload.html')
         elif response is "exists":
             messages.info(self.request, "Some data already exists. Try fresh rows!")
